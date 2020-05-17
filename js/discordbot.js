@@ -1,49 +1,52 @@
 //ログイン処理
+  // 必要なファイルの読み込み
 const Discord = require('discord.js');
+
+const firebase = require("firebase-admin");
+const serviceAccount = require("../../serviceAccountKey.json");
+// テーブルごとのメソッドを持ったjsの読み込み(他のテーブルを作った場合はここで読み込む)
+const userJS = require('./user.js');
+const commentJS = require('./comment.js');
+
 const client = new Discord.Client();
-const token = 'NzA0ODk4OTU0NzYzOTYwMzMx.Xr5qqQ.sDOHcjTWelFQ6jx_e4d-RC96HYU';
+const token = process.env.DISCORD_BOT_TOKEN;
+var database;
+
+/***
+ * discordbot立ち上げ時の準備
+ * 先に準備が必要な処理はここに書く
+ * */ 
 client.on('ready', () => {
-    console.log('ready...');
+
+  firebase.initializeApp({
+    credential: firebase.credential.cert(serviceAccount),
+    databaseURL: "https://kawaii-juku.firebaseio.com"
+  });
+
+  database = firebase.database();
+
+  // 別ファイルでファイヤベースを利用するための初期化(他のテーブルを作った場合はここで初期化する)
+  userJS.initializeUser(database);
+  commentJS.initializeUser(database);
+
+  // 準備完了
+  console.log('ready...');
 });
-//Bot自身の発言を無視する呪い
+
+/***
+ * メッセージを受け取った時の処理
+ * message: discordで受け取ったメッセージのオブジェクト
+ * リファレンス: https://github.com/discordjs/discord.js/blob/a6510d6a6185b0b589e3aecb1b22b97bdf50fd04/src/structures/Message.js
+ *  */
 client.on('message', message =>{
-    if(message.author.bot){
-        return;
-   }
+  //Bot自身の発言を無視する呪い
+  if(message.author.bot){
+    return;
+  }
 
-writeCommentData(message)
+  userJS.writeDiscordUserData(message.author.id, message.author.username);
+  commentJS.writeCommentData(message);
 
 });
-
-// FIREBASEの処理！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-// Set the configuration for your app
-// TODO: Replace with your project's config object
-var firebase = require("firebase-admin");
-
-var serviceAccount = require("../../serviceAccountKey.json");
-
-firebase.initializeApp({
-  credential: firebase.credential.cert(serviceAccount),
-  databaseURL: "https://kawaii-juku.firebaseio.com"
-});
-
-  // Get a reference to the database service
-  var database = firebase.database();
-
-
-// 書き込み
-function writeCommentData(message) {
-  console.log('function came');
-  var comment = message.content
-  var id = message.author.id
-  var name = message.author.username
-  var isRead = false
-    firebase.database().ref('comment/' + message.id).set({ //setじゃなくてpushでもできる
-      comment: comment,
-      id: id,
-      name : name,
-      isRead : isRead
-    });
-}
 
 client.login(token);
