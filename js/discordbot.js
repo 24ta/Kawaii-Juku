@@ -1,6 +1,7 @@
 //ログイン処理
 const Discord = require('discord.js');
-const token = '';
+const client = new Discord.Client();
+const token = 'NzA0ODk4OTU0NzYzOTYwMzMx.Xr5qqQ.sDOHcjTWelFQ6jx_e4d-RC96HYU';
 client.on('ready', () => {
     console.log('ready...');
 });
